@@ -5,10 +5,37 @@ import sys
 import threading
 import urllib.request
 from http.server import HTTPServer
+from unittest.mock import patch
 
 os.environ.update(VK_CONFIRMATION="conf123", VK_SECRET="s3cret", VK_GROUP_ID="1")
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "api"))
 import index  # noqa: E402
+
+
+# Ensure the OpenRouter request uses the requested model IDs and parses replies.
+class FakeResponse:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
+
+    def read(self):
+        return json.dumps({"choices": [{"message": {"content": "Тестовый ответ"}}]}).encode()
+
+
+index.OPENROUTER_API_KEY = "test-key"
+requests = []
+
+def fake_urlopen(request, timeout):
+    requests.append((request, timeout))
+    return FakeResponse()
+
+
+with patch.object(index.urllib.request, "urlopen", side_effect=fake_urlopen):
+    assert index.ask_openrouter([{"role": "user", "content": "привет"}], 1) == "Тестовый ответ"
+assert json.loads(requests[0][0].data)["model"] == "meta-llama/llama-3.3-70b:free"
+assert requests[0][1] == 7
 
 sent = []
 typing = []

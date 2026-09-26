@@ -18,7 +18,7 @@ OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 # Each incoming message advances to the next model. If one is unavailable,
 # the remaining models are tried in order before returning an error.
 OPENROUTER_MODELS = (
-    "meta-llama/llama-3.3-70b-instruct:free",
+    "meta-llama/llama-3.3-70b:free",
     "openai/gpt-oss-120b:free",
     "google/gemma-4-31b-it:free",
     "z-ai/glm-4.5-air:free",
@@ -127,7 +127,7 @@ def ask_openrouter(history, user_turns):
             method="POST",
         )
         try:
-            with urllib.request.urlopen(request, timeout=9) as response:
+            with urllib.request.urlopen(request, timeout=7) as response:
                 result = json.loads(response.read().decode("utf-8"))
             answer = _completion_text(result["choices"][0]["message"].get("content"))
             if answer:
